@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Satelitte Tracking Terminal</title>
+    <link rel="sytlesheet" href="style.css">
+</head>
+<body>
+
+
+    <div id="Console-container">
+        <header id="system-header">
+            <span class="system-status">SYSTEM ONLINE</span>
+            <span id="Time display">00:00:00 UTC</span>
+        </header>
+
+
+        <main id="Main-interface">
+            <section id="radar-section">
+                <div class="panel-header">RADAR DISPLAY (2D TRACKING)</div>
+                <canvas id="Radar-canvas" width="600" height="600"></canvas>
+            </section>
+
+
+            <section id="Data-section">
+                <div class="data-panel">
+                    <div class="panel-header">SYSTEM READOUTS</div>
+                    <div class="data-line">
+                        <label>Active Targets:</label>
+                        <span id="Active-targets">0</span>
+                    </div>
+                    <div class="data-line">
+                        <label>Signal-Strength:</label>
+                        <span id="Signal-Strength">-- dBm</span>
+                    </div>
+                    <div class="data-line">
+                        <label>Latitude/Longitude</label>
+                        <span id="Lat-Long">00.00° / 00.00°</span>
+                    </div>
+                    <div class="data-line">
+                        <label>Tracking mode:</label>
+                        <span id="tracking-mode">AUTO</span>
+                    </div>
+                </div>
+               
+                <div class="data-panel target-list-panel">
+                    <div class="panel-header">TRACKED SIGNALS</div>
+                    <ul id="target-list">
+                        <li>Target 1: Awaiting signal...</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+
+        <footer id="system-footer">
+            <span id="system-log">System check successful. Ready for tracking operations.</span>
+        </footer>
+    </div>
+
+
+
+
+    <script src="script.js"></script>
+    <style>
+   
+    body {
+        background-color: #0d1117;
+        color: #00ff7f;
+        font-family: 'Consolas','Courier New', monospace;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+
+    #Console-container {
+      width: 90%;
+      max-width: 1250px;
+      border: 2px solid #00ff7f;
+      box-shadow: 0 0 15px #00ff7f, inset 0 0 5px #00ff7f;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      background-color: #0d1117;
+    }
+   
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50%{ opacity: 0.6; }
+        100% {opacity: 1; }
+    }
+
+
+    @keyframes border-flicker {
+        0%, 100% {box-shadow: 0 0 15px rgba(0,255,127,0.8); }
+        50% { box-shadow: 0 0 8px rgba(0,255,127,0.4); }
+    }
+
+
+    #System-header, #System-footer {
+        background-color: #002d1a;
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        text-shadow: 0 0 6px #00ff7f;
+        border: 1px solid #00ff7f;
+        margin-bottom: 10px;
+        animation: bordr-flicker 4s infinite linear;
+    }
+
+
+    .system-status {
+        animation: pulse 2s infinite ease-in-out;
+    }
+
+
+    #main-interface {
+        display: flex;
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+
+    .panel-header {
+        background-color: #003322;
+        color: #00ff7f;
+        padding: 7px 12px;
+        margin-bottom: 12px;
+        border-left: 4px solid #00ff7f;
+        font-size: 1em;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+
+    #radar-section {
+        flex: 3;
+        border: 1px solid #00ff7f;
+        padding: 15px;
+        position: relative;
+        background-color: #03080c;
+    }
+
+
+    #radar-canvas {
+        display: block;
+        background-image:
+            linear-gradient(0deg, transparent 19px, #00462a 20px),
+            linear-gradient(90deg, transparent 19px, #004d2a 20px);
+            background-size: 30px 30px;
+    }
+
+
+    #data-section {
+        flex: 1.5;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+
+    .data-panel {
+        border: 1px solid #004d2a;
+        padding: 15px;
+        background-color: rgba(0,30,15,0.5);
+    }
+
+
+    .data-line label {
+        color: #90ee90;
+        text-transform: uppercase;
+        flex-basis: 60%;
+    }
+
+
+    .data-line span {
+        color: #ffffff;
+        text-shadow: 0 0 3px #00ff7f;
+    }
+
+
+    .target-list-panel, #log-panel {
+        max-height: 200px;
+        overflow-y: scroll;
+    }
+
+
+    #target-list {
+        list-style:none;
+        padding: 0;
+        margin: 0;
+    }
+
+
+    .target-list-panel::-webkit-scrollbar, #log-panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+
+    .target-list-panel::-webkit-scrollbar-track, #log-panel::-webkit-scrollbar-track {
+        background: #00ff7f;
+    }
+
+
+    .target-list-panel::-webkit-scrollbar-thumb, #log-panel::-webkit-scrollbar-thumb {
+        background: #00ff7f;
+        border-radius: 4px;
+        border: 1px solid #004d2a;
+    }
+
+
+    #gauge-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px 0;
+        border-top: 1px solid #004d2a;
+    }
+
+
+    #signal-gauge {
+        width: 150px;
+        height: 75px;
+        border-radius: 75px 75px 0 0;
+        background-color: #011a0d;
+        overflow: hidden;
+        position: relative;
+        border: 2px solid #00ff7f;
+        border-bottom: none;
+    }
+
+
+    #signal-fill {
+        position: absolute;
+        width: 50%;
+        height: 100%;
+        transform-origin: bottom center;
+        background-color: #ff4500;
+        transition: transform 0.5s, background-color 0.5s;
+        clip-path: pokygon(50% 100%, 0 0, 100% 0);
+        left: 25%;
+    }
+
+
+    #gauge-label {
+        position: absolute;
+        bottom: 5px;
+        width: 100%;
+        text-align: center;
+        font-size: 0.7em;
+        color: white;
+        text-shadow: 0 0 3px black;
+    }
+
+
+    .gauge-red  { background-color: #ff4500; }
+    .gauge-yellow { background-color: #ffff00; }
+    .gauge-green { background-color: #00ff7f; }
+
+
+    #control-panel {
+        padding: 15px;
+        border: 1px solid #00ff7f;
+    }
+
+
+    #control-panel input[type="number"], #control-panel button {
+        background-color: #0d1117;
+        border: 1px solid #00ff7f;
+        color: #00ff7f;
+        padding: 8px;
+        margin-right: 5px;
+        outline: none;
+    }
+
+
+    #control-panel button {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+
+    #control-panel button:hover {
+        background-color: #004d2a;
+    }
+
+
+    </style>
+
+
+    <script>
+        const CANVAS_SIZE = 600;
+        const INITIAL_TARGET_COUNT = 3;
+        const UPDATE_INTERVAL = 40;
+        const MAX_VELOCITY = 1.5;
+        const MAX_SIGNAL_DISTANCE = CANVAS_SIZE / 2;
+        const RADAR_CENTER = { x: CANVAS_SIZE / 2, y: CANVAS_SIZE / 2 };
+
+
+        const canvas = document.getElementById('radar-canvas');
+        const ctx = canvas.Getcontext('2d');
+        const targetlistEL = document.getElementById('target-list');
+        const ActiveTargetsEL = document.getElementById('active-targets');
+        const logPanelEL = document.getElementById('log-panel');
+        const loglistEL = document.getElementById('system-log-list');
+        const timeDisplayEL = document.getElementById('time-display');
+       
+
+
+        const signalFillEL = document.getElementById('signal-fill');
+        const signalStrengthEL = document.getElementById('signal-fill');
+        const gaugeLabelEL = document.getElementById('gauge-label');
+        const addTargetButton = document.getElementById('add-target-btn');
+        const newTargetNameInput = document.getElementById('new-target-name');
+
+
+        canvas.width = CANVAS_SIZE;
+        canvas.height = CANVAS_SIZE;
+
+
+
+
+        let targets = [];
+        let LogHistory = [];
+        let nextTargetId = 1;
+        let Selectedtarget = null;
+
+
+        function Getdistance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+
+        function WriteLog(message, type = 'INFO')
+        {
+            const timestamp = new Date().toLocaleTimeString('en-us', { hour12: false });
+            const logentry = `[${timetstamp}][${type}] ${message}`;
+            LogHistory.unshift(logentry);
+            if (loghistory.length > 50) loghistory.pop();
+
+
+            logListEL.innerHTML = loghistory.map(entry => {
+                let color = '#90ee90';
+                if (entry.includes('[ALERT]')) color = '#ff4500';
+                else if (entry.includes('[ERROR]')) color = '#ff0000';
+                return `<li style="color: ${color};">${entry}</li>`;
+            }).join('');
+        }
+
+
+        class SignalTarget {
+            constructor(id, name = `TARGET-${String(id).padStart(3, '0')}`) {
+                this.id =id;
+                this.name = name;
+                this.x = Math.random() * CANVAS_SIZE;
+                this.y = Math.random() * CANVAS_SIZE;
+                this.vx = (Math.random() - 0.5) * MAX_VELOCITY;
+                this.vy = (Math.random() - 0.5) * MAX_VELOCITY;
+                this.color = `#${Maath.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+                this.trail = [];
+                this.MaxTrailLength = 30;
+                this.Isonine = true;
+            }
+
+
+            getsignalstrength() {
+                if (!this.Isonine) return -99;
+                const dist = Getdistance(this, RADAR_CENTER);
+
+
+                let strength = -30 - (dist / MAX_SIGNAL_DISTANCE) * 60;
+
+
+                strength += (Math.random() - 0.5) *5;
+
+
+                return Math.min(-30, Math.max(-90, strength));
+            }
+
+
+            update() {
+                if (!this.isOnline) return;
+
+
+                if (this.x + this.vx > CANVAS_SIZE || this.x + this.vx < 0) this.vx < 0) this.vx = -this.vx + (Math.random() - 0.5) * 0.2;
+                if (this.y + this.vy > CANVAS_SIZE || this.y + this.vy < 0) this.vy < 0) this.vy = -this.vy + (Math.random() - 0.5) * 0.2;
+           
+                this.x += this.vx;
+                this.y += this.vy;
