@@ -394,3 +394,79 @@
            
                 this.x += this.vx;
                 this.y += this.vy;
+                 this.trail.unshift({ x: this.x, y: this.y });
+                if (this.trail.length > this.MaxTrailLength) {
+                    this.trail.pop();
+                }
+            
+            }
+
+            Draw() {
+                ctx.strokeStyle = this.color + '60';
+                ctx.lineWidth = 1;
+                ctx.Beginpath();
+                if (this.trail.length > 1) {
+                    ctx.MoveTo(this.trail(0).x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++); {
+                        const alpha = (this.MaxTrailLength - i) / this.MaxTrailLength;
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                }
+
+                ctx.stroke();
+
+                ctx.FillStyle = this.color;
+                ctx.Shadowblur = (this === Selectedtarget) ? 15 : 8; 
+                ctx.Shadowcolor = this.color;
+                ctx.Beginpath();
+                ctx.fill();
+                ctx.Shadowblur = 0;
+
+                if (this === Selectedtarget) {
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+        }
+
+
+        function SelectTarget(TargetId) {
+            Selectedtarget = targets.find(t.id === TargetId);
+            if (Selectedtarget) {
+                WriteLog(`Target ${Selectedtarget.name} selected.`, 'INFO')
+            }
+        }
+
+        function addNewTarget() {
+            const name = newTargetNameInput.value.trim() || `NEW_TARGET_${nextTargetId}`;
+            if (targets.length >= 15) {
+                WriteLog('Target capacity reached. Cannot add new target.`', 'ALERT');
+                return;
+            }
+
+            const newTarget = new SignalTarget(nextTargetId++, name);
+            targets.push(newTarget);
+            newTargetNameInput.value = '';
+            SelectTarget(newTarget.id);
+            WriteLog(`New signal detected: ${name}`, 'ALERT');
+        }
+
+        addTargetButton.addEventListener('click', addNewTarget);
+
+        targetlistEL.addEventListener('click', (e) => {
+            const li = e.target.closest('li');
+            if (li &&  li.dataset.TargetId) {
+                selectTarget(parseInt(li.dataset.TargetId));
+            }
+        });
+
+
+        
+
+    </script>
+
+
+</body>
+</html>
+
