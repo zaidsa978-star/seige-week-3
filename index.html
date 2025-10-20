@@ -2,21 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Satelitte Tracking Terminal</title>
-    <link rel="sytlesheet" href="style.css">
 </head>
 <body>
 
-    <div id="Console-container">
-        <header id="system-header">
+    <div id="console-container">
+        <header id="system-header ">
             <span class="system-status">SYSTEM ONLINE</span>
-            <span id="Time display">00:00:00 UTC</span>
+            <span id="time-display">00:00:00 UTC</span>
         </header>
 
-        <main id="Main-interface">
+        <main id="main-interface">
             <section id="radar-section">
                 <div class="panel-header">RADAR DISPLAY (2D TRACKING)</div>
-                <canvas id="Radar-canvas" width="600" height="600"></canvas>
+                <canvas id="radar-canvas" width="600" height="600"></canvas>
             </section>
 
             <section id="Data-section">
@@ -24,19 +22,25 @@
                     <div class="panel-header">SYSTEM READOUTS</div>
                     <div class="data-line">
                         <label>Active Targets:</label>
-                        <span id="Active-targets">0</span>
+                        <span id="active-targets">0</span>
                     </div>
                     <div class="data-line">
-                        <label>Signal-Strength:</label>
-                        <span id="Signal-Strength">-- dBm</span>
+                        <label>signal-strength:</label>
+                        <span id="signal-strength">-- dBm</span>
                     </div>
                     <div class="data-line">
                         <label>Latitude/Longitude</label>
-                        <span id="Lat-Long">00.00° / 00.00°</span>
+                        <span id="lat-long">00.00° / 00.00°</span>
                     </div>
                     <div class="data-line">
                         <label>Tracking mode:</label>
                         <span id="tracking-mode">AUTO</span>
+                    </div>
+                    <div id="gauge-container">
+                        <div id="signal-gauge">
+                        <div id="signal-fill" class="gauge-red"></div>
+                        <span id="gauge-label">NO TARGET</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -46,6 +50,18 @@
                         <li>Target 1: Awaiting signal...</li>
                     </ul>
                 </div>
+
+                <div id="control-panel" class="data-panel">
+                    <div class="panel-header">CONTROL PANEL</div>
+                    <input type="text" id="new-target-name" placeholder="Target Name">
+                    <button id="add-target-btn">ADD SIGNAL</button>
+                </div>
+
+                <div class="data-panel" id="log-panel">
+                    <div class="panel-header">SYSTEM LOG</div>
+                    <span id="system-log-list">System check successful. Ready for tracking operations.</span>
+                </div>
+
             </section>
         </main>
 
@@ -55,7 +71,6 @@
     </div>
 
 
-    <script src="script.js"></script>
     <style>
     
     body {
@@ -103,7 +118,7 @@
         text-shadow: 0 0 6px #00ff7f;
         border: 1px solid #00ff7f;
         margin-bottom: 10px;
-        animation: bordr-flicker 4s infinite linear;
+        animation: border-flicker 4s infinite linear;
     }
 
     .system-status {
@@ -156,6 +171,13 @@
         background-color: rgba(0,30,15,0.5);
     }
 
+    .data-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        font-size: 0.9em;
+    }
+
     .data-line label {
         color: #90ee90;
         text-transform: uppercase;
@@ -168,14 +190,38 @@
     }
 
     .target-list-panel, #log-panel {
-        max-height: 200px;
+        max-height: 180px;
         overflow-y: scroll;
     }
 
     #target-list {
-        list-style:none;
+        list-style: none;
         padding: 0;
         margin: 0;
+    }
+
+    #target-list li {
+        padding: 5px 0;
+        border-bottom: 1px dotted #004d2a;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.85em;
+    }
+
+    #target-list li.selected {
+        background-color: rgba(0, 255, 127, 0.2);
+        font-weight: bold;
+    }
+
+    #target-list li:hover {
+        background-color: rgba(0,255,127,0.2);
+        color: #ffffff;
+    }
+
+    #system-log-list {
+        display: block;
+        font-size: 0.8em;
+        line-height: 1.4;
     }
 
     .target-list-panel::-webkit-scrollbar, #log-panel::-webkit-scrollbar {
@@ -183,7 +229,7 @@
     }
 
     .target-list-panel::-webkit-scrollbar-track, #log-panel::-webkit-scrollbar-track {
-        background: #00ff7f;
+        background: #0d1117;
     }
 
     .target-list-panel::-webkit-scrollbar-thumb, #log-panel::-webkit-scrollbar-thumb {
@@ -198,6 +244,7 @@
         align-items: center;
         padding: 15px 0;
         border-top: 1px solid #004d2a;
+        margin-top: 10px;
     }
 
     #signal-gauge {
@@ -218,7 +265,7 @@
         transform-origin: bottom center;
         background-color: #ff4500;
         transition: transform 0.5s, background-color 0.5s;
-        clip-path: pokygon(50% 100%, 0 0, 100% 0);
+        clip-path: polygon(50% 100%, 0 0, 100% 0);
         left: 25%;
     }
 
@@ -239,24 +286,32 @@
     #control-panel {
         padding: 15px;
         border: 1px solid #00ff7f;
+        display: flex;
+        flex-direction: column;
     }
 
-    #control-panel input[type="number"], #control-panel button {
+    #control-panel input[type="text"] {
         background-color: #0d1117;
         border: 1px solid #00ff7f;
         color: #00ff7f;
         padding: 8px;
-        margin-right: 5px;
+        margin-right: 10px;
         outline: none;
+        font-family: 'Consolas', monospace;
     }
 
     #control-panel button {
+        background-color: #004d2a;
+        border: 1px solid #00ff7f;
+        color: #ffffff;
+        padding: 8px;
         cursor: pointer;
         transition: background-color 0.2s;
+        font-family: 'Consolas', monospace;
     }
 
     #control-panel button:hover {
-        background-color: #004d2a;
+        background-color: #006633;
     }
 
     </style>
@@ -264,22 +319,20 @@
     <script>
         const CANVAS_SIZE = 600;
         const INITIAL_TARGET_COUNT = 3;
-        const UPDATE_INTERVAL = 40;
         const MAX_VELOCITY = 1.5;
         const MAX_SIGNAL_DISTANCE = CANVAS_SIZE / 2;
         const RADAR_CENTER = { x: CANVAS_SIZE / 2, y: CANVAS_SIZE / 2 };
 
         const canvas = document.getElementById('radar-canvas');
-        const ctx = canvas.Getcontext('2d');
+        const ctx = canvas.getContext('2d');
         const targetlistEL = document.getElementById('target-list');
         const ActiveTargetsEL = document.getElementById('active-targets');
-        const logPanelEL = document.getElementById('log-panel');
-        const loglistEL = document.getElementById('system-log-list');
+        const LoglistEL = document.getElementById('system-log-list');
         const timeDisplayEL = document.getElementById('time-display');
         
 
         const signalFillEL = document.getElementById('signal-fill');
-        const signalStrengthEL = document.getElementById('signal-fill');
+        const signalStrengthEL = document.getElementById('signal-strength');
         const gaugeLabelEL = document.getElementById('gauge-label');
         const addTargetButton = document.getElementById('add-target-btn');
         const newTargetNameInput = document.getElementById('new-target-name');
@@ -289,50 +342,49 @@
 
 
         let targets = [];
-        let LogHistory = [];
+        let logHistory = [];
         let nextTargetId = 1;
         let Selectedtarget = null;
 
-        function Getdistance(p1, p2) {
+        function GetDistance(p1, p2) {
             return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
         }
 
         function WriteLog(message, type = 'INFO') 
         {
             const timestamp = new Date().toLocaleTimeString('en-us', { hour12: false });
-            const logentry = `[${timetstamp}][${type}] ${message}`;
-            LogHistory.unshift(logentry);
-            if (loghistory.length > 50) loghistory.pop();
+            const logentry = `[${timestamp}][${type}] ${message}`;
+            logHistory.unshift(logentry);
+            if (logHistory.length > 50) logHistory.pop();
 
-            logListEL.innerHTML = loghistory.map(entry => {
+            LoglistEL.innerHTML = logHistory.map(entry => {
                 let color = '#90ee90';
                 if (entry.includes('[ALERT]')) color = '#ff4500';
                 else if (entry.includes('[ERROR]')) color = '#ff0000';
-                return `<li style="color: ${color};">${entry}</li>`;
-            }).join('');
+                return `<span style="color: ${color};">${entry}</li>`;
+            }).join('<br>');
         }
 
         class SignalTarget {
             constructor(id, name = `TARGET-${String(id).padStart(3, '0')}`) {
-                this.id =id;
+                this.id = id;
                 this.name = name;
                 this.x = Math.random() * CANVAS_SIZE;
                 this.y = Math.random() * CANVAS_SIZE;
                 this.vx = (Math.random() - 0.5) * MAX_VELOCITY;
                 this.vy = (Math.random() - 0.5) * MAX_VELOCITY;
-                this.color = `#${Maath.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+                this.color = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
                 this.trail = [];
                 this.MaxTrailLength = 30;
-                this.Isonine = true;
+                this.IsOnine = true;
             }
 
             getsignalstrength() {
-                if (!this.Isonine) return -99;
-                const dist = Getdistance(this, RADAR_CENTER);
+                if (!this.IsOnine) return -99;
+                const dist = GetDistance(this, RADAR_CENTER);
 
                 let strength = -30 - (dist / MAX_SIGNAL_DISTANCE) * 60;
-
-                strength += (Math.random() - 0.5) *5;
+                strength += (Math.random() - 0.5) * 5;
 
                 return Math.min(-30, Math.max(-90, strength));
             }
@@ -353,13 +405,13 @@
             
             }
 
-            Draw() {
+            draw() {
                 ctx.strokeStyle = this.color + '60';
                 ctx.lineWidth = 1;
-                ctx.Beginpath();
+                ctx.beginPath();
                 if (this.trail.length > 1) {
-                    ctx.MoveTo(this.trail(0).x, this.trail[0].y);
-                    for (let i = 1; i < this.trail.length; i++); {
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
                         const alpha = (this.MaxTrailLength - i) / this.MaxTrailLength;
                         ctx.lineTo(this.trail[i].x, this.trail[i].y);
                     }
@@ -367,10 +419,11 @@
 
                 ctx.stroke();
 
-                ctx.FillStyle = this.color;
+                ctx.fillStyle = this.color;
                 ctx.Shadowblur = (this === Selectedtarget) ? 15 : 8; 
                 ctx.Shadowcolor = this.color;
-                ctx.Beginpath();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, (this === Selectedtarget) ? 5 : 3.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.Shadowblur = 0;
 
@@ -383,8 +436,8 @@
         }
 
 
-        function SelectTarget(TargetId) {
-            Selectedtarget = targets.find(t.id === TargetId);
+        function selectTarget(TargetId) {
+            Selectedtarget = targets.find(t => t.id === TargetId);
             if (Selectedtarget) {
                 WriteLog(`Target ${Selectedtarget.name} selected.`, 'INFO')
             }
@@ -400,7 +453,7 @@
             const newTarget = new SignalTarget(nextTargetId++, name);
             targets.push(newTarget);
             newTargetNameInput.value = '';
-            SelectTarget(newTarget.id);
+            selectTarget(newTarget.id);
             WriteLog(`New signal detected: ${name}`, 'ALERT');
         }
 
@@ -436,7 +489,7 @@
             ).join('')
 
             if (Selectedtarget) {
-                const strength = selectTarget.getsignalstrength();
+                const strength = Selectedtarget.getsignalstrength();
                 const NormalizedStrength = (strength + 90) / 60;
                 const rotation = NormalizedStrength * 180;
 
@@ -451,7 +504,7 @@
                 gaugeLabelEL.textContent = Selectedtarget.name;
 
                 const lat = (Selectedtarget.y / CANVAS_SIZE * 180 - 90).toFixed(2);
-                const lon = (selectedtarget.x / CANVAS_SIZE * 360 - 180).toFixed(2);
+                const lon = (Selectedtarget.x / CANVAS_SIZE * 360 - 180).toFixed(2);
                 document.getElementById('lat-long').textContent = `${lat}° / ${lon}°`;
 
             } else {
